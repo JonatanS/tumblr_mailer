@@ -11,10 +11,17 @@
    </p>
     <p>
       I've been blogging about my experiences at Fullstack on my blog. 
-      Check out my new posts here: 
-      <a href="https://www.tumblr.com/blog/js-on-js">My Blog</a>
+      Check out my : <span><a href="http://js-on-js.tumblr.com/">new blog here</a></span>
+      
+      Look at my most recent posts:
+      <ul>
+        <% for(var i=0; i<latestPosts.length; i++) {%>
+           <li><a href=<%= latestPosts[i].href %>> <%= latestPosts[i].title %></a>  </li>
+        <% } %>
+      </ul>
     </p>
     <p>
+
       Talk soon,<br>
       Jonatan
     </p>
