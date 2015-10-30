@@ -11,7 +11,6 @@ contacts.forEach(function(c){
 		var emailBody = fs.readFileSync("views/email_template.html");
 		emailBody = customizeEmail(c, emailBody.toString());
 		console.log("Email: \n" + emailBody);
-	// });
 });
 
 
@@ -39,8 +38,6 @@ function csvParse(csvFile) {
 
 
 
-
-
 function customizeEmail(contact, emailBody) {
 	var customEmail = emailBody;//set it to a different variable, since it's been referenced byval only
 
@@ -52,6 +49,7 @@ function customizeEmail(contact, emailBody) {
 	}
 	return customEmail;
 }
+
 
 //modified from here:
 //http://jamesroberts.name/blog/2010/02/22/string-functions-for-javascript-trim-to-camel-case-to-dashed-and-to-underscore/
