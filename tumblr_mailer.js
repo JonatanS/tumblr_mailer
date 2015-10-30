@@ -1,17 +1,34 @@
 var fs = require("fs");
+var ejs = require("ejs");
 
+//Read CSV file with Contacts:
 var csvFile = fs.readFileSync("./data/friend_list.csv","utf8");
 console.log(csvFile);
-var contacts = csvParse(csvFile);
-//console.log(contacts);
-console.log("GOT THE CONTACTS!\n\n");
 
-///loop through array of contacts:
+//Parse Contacts in contacts[]:
+var contacts = csvParse(csvFile);
+
+// ///OLD: loop through array of contacts to customize HTML email:
+// contacts.forEach(function(c){
+// 		var emailBody = fs.readFileSync("views/email_template.html");
+// 		emailBody = customizeEmail(c, emailBody.toString());
+// 		console.log("Email: \n" + emailBody);
+// });
+
+//Loop through contacts[] to customize email ejs
+var emailTemplate = fs.readFileSync("views/email_template.html").toString();
 contacts.forEach(function(c){
-		var emailBody = fs.readFileSync("views/email_template.html");
-		emailBody = customizeEmail(c, emailBody.toString());
-		console.log("Email: \n" + emailBody);
+	console.log(c.firstName + ": " + c.numMonthsSinceContact + '\n');
+	
+	//var customizedTemplate = ejs.render(emailTemplate, {firstName: "Jonatan", numMonthsSinceContact: "5"});
+	var customizedTemplate = ejs.render(emailTemplate, c);
+	console.log(customizedTemplate);
 });
+
+
+
+
+
 
 
 
@@ -40,7 +57,7 @@ function csvParse(csvFile) {
 
 function customizeEmail(contact, emailBody) {
 	var customEmail = emailBody;//set it to a different variable, since it's been referenced byval only
-
+	console.log("\n\n\nI SHOULD NOT SEE THIS\n\n\n");
 	for(var prop in contact) {
 		console.log(prop + ": " + contact[prop]);
 		//SNAKE_CASE it and replace it in emailbody
