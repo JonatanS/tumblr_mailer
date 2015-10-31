@@ -10,31 +10,12 @@
 var fs = require("fs");
 var ejs = require("ejs");
 var tumblr = require('tumblr.js');
+//var t = require("./test.js");
+//console.log(t.key);
 var secrets = require('./secrets.js');
 
-//access secrets.js
-var client = tumblr.createClient(secrets.TUMBLR_CONFIG);
-
-var trigger = function() {
-	//do everything here with callbacks (call a function from within a function from within a function...)
-	console.log("STARTING...");
-	//1. call to tumblr and retreive posts, then customize template, then send them 
-	//(so nested! need to work with events!)
-	getTumblrPosts(createCustomizedEmails);
-}
-
-trigger();
-
-
-
-function createCustomizedEmails(postsArray, callback) {
-	postsArray.forEach(function(p, index) {
-		console.log("looking at post #" + index);
-		for(var prop in p) {
-			console.log(prop + ": " + p[prop]);
-		}
-	});
-
+//TODO: Call this after tumblr posts have been read
+var createCustomizedEmails = function() {
 	//Read CSV file with Contacts:
 	var csvFile = fs.readFileSync("./data/friend_list.csv","utf8");
 	console.log(csvFile);
@@ -49,18 +30,64 @@ function createCustomizedEmails(postsArray, callback) {
 		var moreData = {};
 		moreData.firstName = c.firstName;
 		moreData.numMonthsSinceContact = c.numMonthsSinceContact;
+		moreData.latestPosts = [];
 		//todo: add recent blog posts
-		moreData.latestPosts = postsArray;
 
 		//var customizedTemplate = ejs.render(emailTemplate, {firstName: "Jonatan", numMonthsSinceContact: "5"});
 		var customizedTemplate = ejs.render(emailTemplate, moreData);
-		console.log(customizedTemplate);
+		//console.log(customizedTemplate);
 	});
+};
 
-}
 
 
-function getTumblrPosts(callback) {
+
+// var callToTumblr = function() {
+// 	console.log("Entering CallToTumblr");
+// 	var blogName = "js-on-js";
+// 	var maxPostAge = 7;
+// 	var callback;
+
+// 	if(arguments.length > 0)
+// 	{
+// 		blogName = arguments[0].blogName || blogName;
+// 		maxPostAge = arguments[0].numDays || maxPostAge;
+// 		for(var i = 0; i < arguments.length; i++) {
+// 			if (typeof arguments[i] === 'function') {
+// 				callback = arguments[i];
+// 			}
+// 		}
+// 	}
+// //need callback here:
+// 	var myArr = callback(blogName, maxPostAge);
+// 	console.log("got the aRRAY: " + myArr.length);
+
+// };
+
+
+
+
+//access secrets.js
+var client = tumblr.createClient(secrets.TUMBLR_CONFIG);
+
+//posts[]
+//need to callback()
+//var posts = getTumblrPosts({blogName: "js-on-js", numDays: 7});
+var posts = getTumblrPosts(function() {
+	//after posts is read
+	console.log(posts + " is " + typeof posts);
+	console.log(Array.isArray(posts));
+
+	console.log("Number of new posts: " + posts.length);
+	posts.forEach(function(p){
+		console.log(p);
+		console.log(p.date + "\t" + p.title);
+	});
+});
+
+
+
+function getTumblrPosts() {
 	var blogName = "js-on-js";
  	var maxPostAge = 7;
  	var arrNewPosts = [];
@@ -87,7 +114,6 @@ function getTumblrPosts(callback) {
 
 		//THIS IS THE TRICK: RETURN ARRAY FROM HERE	  
 		console.log	("\n\n\nreturning Array with " + arrNewPosts.length + " post(s)\n\n\n");
-		callback(arrNewPosts);
 		return arrNewPosts;
 	});
 }
@@ -114,3 +140,34 @@ function csvParse(csvFile) {
 	}
 	return arrContacts;
 }
+
+
+
+function customizeEmail(contact, emailBody) {
+	var customEmail = emailBody;//set it to a different variable, since it's been referenced byval only
+	console.log("\n\n\nI SHOULD NOT SEE THIS\n\n\n");
+	for(var prop in contact) {
+		console.log(prop + ": " + contact[prop]);
+		//SNAKE_CASE it and replace it in emailbody
+		var strToReplace = toSnakeCase(prop);
+		customEmail = customEmail.replace(strToReplace, contact[prop]);
+	}
+	return customEmail;
+}
+
+
+//modified from here:
+//http://jamesroberts.name/blog/2010/02/22/string-functions-for-javascript-trim-to-camel-case-to-dashed-and-to-underscore/
+function toSnakeCase(str){
+	var modStr =  str.replace(/([A-Z])/g, function($1){return "_"+$1.toLowerCase();}).toUpperCase();
+	return modStr;
+};
+
+
+
+// ///OLD: loop through array of contacts to customize HTML email:
+// contacts.forEach(function(c){
+// 		var emailBody = fs.readFileSync("views/email_template.html");
+// 		emailBody = customizeEmail(c, emailBody.toString());
+// 		console.log("Email: \n" + emailBody);
+// });
