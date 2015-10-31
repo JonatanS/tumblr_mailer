@@ -60,9 +60,7 @@ function createCustomizedEmails(objPosts) {
 		var customizedTemplate = ejs.render(emailTemplate, data);
 
 		//function sendEmail(to_name, to_email, from_name, from_email, subject, message_html)
-		if(c.firstName != "Scott") {
-			sendEmail(c.firstName, c.emailAddress, "Jonatan", "jonatan@jschumacher.com", "my blog", customizedTemplate);
-		}
+		sendEmail(c.firstName, c.emailAddress, "Jonatan", "jonatan@jschumacher.com", "my blog", customizedTemplate);
 	});
 }
 
