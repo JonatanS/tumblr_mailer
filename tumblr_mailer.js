@@ -11,24 +11,28 @@ var fs = require("fs");
 var ejs = require("ejs");
 var tumblr = require('tumblr.js');
 var secrets = require('./secrets.js');
+var mandrill = require('mandrill-api/mandrill');
 
 //access secrets.js
-var client = tumblr.createClient(secrets.TUMBLR_CONFIG);
+var tumblr_client = tumblr.createClient(secrets.TUMBLR_CONFIG);
 
-var trigger = function() {
-	//do everything here with callbacks (call a function from within a function from within a function...)
-	console.log("STARTING...");
-	//1. call to tumblr and retreive posts, then customize template, then send them 
-	//(so nested! need to work with events!)
-	getTumblrPosts(createCustomizedEmails);
-}
+var mandrill_client = new mandrill.Mandrill(secrets.MANDRILL_CONFIG.api_key);
 
-trigger();
+
+//start the process with callbacks
+getTumblrPosts(createCustomizedEmails);
 
 
 
-function createCustomizedEmails(postsArray, callback) {
-	postsArray.forEach(function(p, index) {
+function createCustomizedEmails(objPosts) {
+	objPosts["newPosts"].forEach(function(p, index) {
+		console.log("looking at post #" + index);
+		for(var prop in p) {
+			console.log(prop + ": " + p[prop]);
+		}
+	});
+
+		objPosts["oldPosts"].forEach(function(p, index) {
 		console.log("looking at post #" + index);
 		for(var prop in p) {
 			console.log(prop + ": " + p[prop]);
@@ -46,17 +50,20 @@ function createCustomizedEmails(postsArray, callback) {
 	var emailTemplate = fs.readFileSync("views/email_template.ejs").toString();	//toString is important!
 	contacts.forEach(function(c){
 		console.log(c.firstName + ": " + c.numMonthsSinceContact + '\n');
-		var moreData = {};
-		moreData.firstName = c.firstName;
-		moreData.numMonthsSinceContact = c.numMonthsSinceContact;
-		//todo: add recent blog posts
-		moreData.latestPosts = postsArray;
+		var data = {};
+		data.firstName = c.firstName;
+		data.numMonthsSinceContact = c.numMonthsSinceContact;
 
-		//var customizedTemplate = ejs.render(emailTemplate, {firstName: "Jonatan", numMonthsSinceContact: "5"});
-		var customizedTemplate = ejs.render(emailTemplate, moreData);
-		console.log(customizedTemplate);
+		data.latestPosts = objPosts["newPosts"];
+		data.olderPosts = objPosts["oldPosts"];
+
+		var customizedTemplate = ejs.render(emailTemplate, data);
+
+		//function sendEmail(to_name, to_email, from_name, from_email, subject, message_html)
+		if(c.firstName != "Scott") {
+			sendEmail(c.firstName, c.emailAddress, "Jonatan", "jonatan@jschumacher.com", "my blog", customizedTemplate);
+		}
 	});
-
 }
 
 
@@ -64,34 +71,44 @@ function getTumblrPosts(callback) {
 	var blogName = "js-on-js";
  	var maxPostAge = 7;
  	var arrNewPosts = [];
-	client.posts(blogName, function(err, blog){
+ 	var arrOldPosts = [];
+	tumblr_client.posts(blogName, function(err, blog){
 
 		console.log("num posts: " + blog.posts.length);
 		for(var post in blog.posts) {
+
+	  		var p = {
+	  			"date": blog.posts[post].date,
+	  			"title" : (blog.posts[post].title == undefined ? "untitled" : blog.posts[post].title),
+	  			"url" : blog.posts[post].post_url
+	  		};
+	  		console.log("TITLE: " + p["title"]);
+
 		  	//calculate post age:
 		  	var today = new Date();
 		  	var postDate = new Date(blog.posts[post].date);
 		  	var postAge = Math.ceil((today - postDate) / (1000 * 3600 * 24));
 		  	//console.log("Post Age: " + today + "-" + postDate + " = " + postAge);
-		  	if(Number(postAge) <= Number(maxPostAge)) {
-		  		var p = {
-		  			"date": blog.posts[post].date,
-		  			"title" : blog.posts[post].title,
-		  			"url" : blog.posts[post].post_url
-		  		}
+
 	  		
+		  	if(Number(postAge) <= Number(maxPostAge)) {
 	  			arrNewPosts.push(p);
 	  		}
+	  		else {
+	  			arrOldPosts.push(p);
+	  		}
 		}
-		console.log("return array sizeTWO: " + arrNewPosts.length);
 
-		//THIS IS THE TRICK: RETURN ARRAY FROM HERE	  
-		console.log	("\n\n\nreturning Array with " + arrNewPosts.length + " post(s)\n\n\n");
-		callback(arrNewPosts);
-		return arrNewPosts;
+		AllPosts = {
+			newPosts : arrNewPosts,
+			oldPosts : arrOldPosts
+		};
+		//THIS IS THE TRICK: RETURN ARRAYS FROM HERE	  
+		console.log	("\n\n\nreturning Object with " + arrNewPosts.length + "new post(s)\n\n\n");
+		callback(AllPosts);
+		//return arrNewPosts;
 	});
 }
-
 
 
 function csvParse(csvFile) {
@@ -114,3 +131,33 @@ function csvParse(csvFile) {
 	}
 	return arrContacts;
 }
+
+
+ function sendEmail(to_name, to_email, from_name, from_email, subject, message_html){
+    var message = {
+        "html": message_html,
+        "subject": subject,
+        "from_email": from_email,
+        "from_name": from_name,
+        "to": [{
+                "email": to_email,
+                "name": to_name
+            }],
+        "important": false,
+        "track_opens": true,    
+        "auto_html": false,
+        "preserve_recipients": true,
+        "merge": false,
+        "tags": [
+            "Fullstack_Tumblrmailer_Workshop"
+        ]    
+    };
+    var async = false;
+    var ip_pool = "Main Pool";
+    mandrill_client.messages.send({"message": message, "async": async, "ip_pool": ip_pool}, function(result) {
+    }, function(e) {
+        // Mandrill returns the error as an object with name and message keys
+        console.log('A mandrill error occurred: ' + e.name + ' - ' + e.message);
+        // A mandrill error occurred: Unknown_Subaccount - No subaccount exists with the id 'customer-123'
+    });
+ }

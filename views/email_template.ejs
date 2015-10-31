@@ -6,19 +6,27 @@
   <p>
     How are you doing? I'm doing well. It's been almost <%= numMonthsSinceContact %> months
     since we last talked. I'm learning to code full-time at Fullstack Academy and enjoying 
-    my time. This is an auto-generated email I learned how to make in Fullstack Foundations.
+    my time. This is an auto-generated email <a href="https://github.com/JonatanS/tumblr_mailer">I learned how to make</a> in Fullstack Foundations.
 
    </p>
     <p>
       I've been blogging about my experiences at Fullstack on my blog. 
-      Check out my : <span><a href="http://js-on-js.tumblr.com/">new blog here</a></span>
+      Check out my <span><a href="http://js-on-js.tumblr.com/">new blog here</a></span>
       
       Look at my most recent posts:
       <ul>
         <% for(var i=0; i<latestPosts.length; i++) {%>
-           <li><a href=<%= latestPosts[i].href %>> <%= latestPosts[i].title %></a>  </li>
+           <li><a href=<%= latestPosts[i].url %>> <%= latestPosts[i].title %></a>  </li>
         <% } %>
       </ul>
+      <p>
+      And here are some older posts:
+      <ul>
+        <% for(var i = 0; i < olderPosts.length; i++) {%>
+           <li><a href=<%= olderPosts[i].url %>> <%= olderPosts[i].title %></a>  </li>
+        <% } %>
+      </ul>
+      </p>
     </p>
     <p>
 
